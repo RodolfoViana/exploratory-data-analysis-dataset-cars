@@ -1,0 +1,321 @@
+---
+title: "Exploratory data analysis | Dataset Cars"
+author: "Rodolfo Viana"
+date: "30-07-2016"
+output: html_document
+---
+
+## Exploratory data analysis
+
+We have two small csv files that describe some characteristics of vehicles. 
+In cars_multi.csv we have the columns:
+
+* ID
+* mpg
+* cylinders
+* displacement
+* horsepower
+* weight
+* acceleration
+* model
+* origin
+* car_name
+
+In the cars_price.csv we have the columns: 
+
+* ID
+* price
+
+My task is to understand how the data in these columns relate to each other, to uncover interesting things, and to communicate those findings. I'm going to focus on the correlation between mpg and the other properties.
+
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+# Importing library
+library(dplyr)
+library(ggplot2)
+library(corrplot)
+
+str(cars_price)
+```
+
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+# Load data
+cars_multi <- read.csv("cars_multi.csv")
+cars_price <- read.csv("cars_price.csv")
+```
+
+Looking the first 6 observations of the dataset
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+# Head of the dataset
+head(cars_multi)
+head(cars_price)
+```
+
+Dimensions
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+# Dimensions of the dataset
+dim(cars_multi)
+dim(cars_price)
+```
+
+We decide to merge the dataset, that way we are going to work with one dataset
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+# Join two dataset
+cars <- left_join(cars_multi, cars_price, by = "ID")
+```
+
+Now we have the following columns
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+colnames(cars)
+```
+
+Checking missing cases
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+# Complet cases
+sum(!complete.cases(cars))
+```
+
+There are 0 missing cases, apparently.
+
+Overview of our dataset
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+summary(cars)
+```
+
+### Structure
+
+Our data frame has the structure
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+# Structure of the dataset
+str(cars)
+```
+
+## Looking each variable
+### MPG
+
+Mpg means Miles per gallon and we want to know the most common value
+
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+ggplot(cars, aes(mpg)) + 
+  geom_histogram(binwidth = 5) +
+  labs(title = "Histogram of MPG", y = "Count") +
+  theme_classic()
+```
+
+We can see that the most common mpg is something between 15 and 20 mpg
+
+### Cylinders
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+ggplot(cars, aes(cylinders)) + 
+  geom_bar() +
+  labs(title = "Cylinders", y = "Count") +
+  theme_classic()
+```
+
+For cylinders we can see that 4 cylinders is 2 times more often than 8 cylinders
+
+### Displacement
+
+Using box plot we can see:
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+boxplot(cars$displacement, data=cars$displacement, main="Box Plot Displacement", 
+    xlab="", ylab="Displacement")
+```
+
+There is more data/value greater than the average
+
+### Horsepower
+
+Here we realize that we have some missing value at the horsepower
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+count(cars[as.character(cars$horsepower) == "?",])
+```
+
+In fact we have 6 missing values at horsepower.
+
+### Weight
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+ggplot(cars, aes(weight)) + 
+  geom_histogram(binwidth = 5) +
+  labs(title = "Histogram of Weight", y = "Count") +
+  theme_classic()
+```
+
+For Weight we see that the most common weight is something between 2000 and 3000. But most important we saw that we have the only one unique weight for the majority of the cars
+
+### Acceleration
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+ggplot(cars, aes(acceleration)) + 
+  geom_density() +
+  labs(title = "Density of Weight") +
+  theme_classic()
+```
+
+We see that the density of acceleration is more concentrate at 15
+
+### Model
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+to_Plot <- as.data.frame(table(cars$model))
+colnames(to_Plot) <- c("Model", "Frequency")
+
+ggplot(to_Plot, aes(x = Model, y = Frequency)) + 
+  geom_bar(stat = "identity") +
+  labs(title = "Model") +
+  theme_classic()
+```
+
+As we can see we have a good a balance sample for model
+
+### Origin
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+ggplot(cars, aes(origin)) + 
+  geom_bar() +
+  labs(title = "Origin", y = "Count") +
+  theme_classic()
+```
+
+We have the majority of the cars from origin 1
+
+### Price
+
+For price we decide to do some pre processing to make more simpler. We are going to keep only the value before the point. For example:
+If we have 1598.07337 we are going to keep only 1598.
+
+We made this decision because we belive that the value after the point is meaningless
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+cars$price <- as.integer(cars$price)
+
+boxplot(cars$price, data=cars$price, main="Price BoxPLot", 
+    xlab="", ylab="Price")
+```
+
+Looking at the box plot of price we can see that we have only one outlier
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+ggplot(cars, aes(price)) + 
+  geom_histogram(binwidth = 5) +
+  labs(title = "Histogram of Weight", y = "Count") +
+  theme_classic()
+
+
+to_Plot <- as.data.frame(table(cars$price))
+colnames(to_Plot) <- c("Price", "Frequency")
+
+ggplot(head(to_Plot[ order(-to_Plot[,2]), ]), aes(x = reorder(Price, Frequency), y = Frequency)) + 
+  geom_bar(stat = "identity") +
+  labs(title = "Model", x = "Price") +
+  theme_classic() + 
+  coord_flip()
+```
+
+With this visualization we can see that we have 3 price that repeat more than 40 times. We have 219 unique prices. This could be a problem if we have to predict the price of the cars because we have unbalanced data
+
+## Correlation
+
+At this plot we can see the correlation between all features. Two features can have a positive correlation, a negative correlation and a neutral correlation
+When the dot is red that means that is a negative correlation. Which means when one value is getting high the other value is getting slow. The biggest is the dot more negative is the value 
+When the dot is blue it is a positive correlation
+Blank means that this two variables has no correlation
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+# Transforming from factor to numeric
+cars$horsepower <- as.numeric(as.character(cars$horsepower))
+
+# Removing not complete row 
+cars <- cars[complete.cases(cars),]
+
+# Removing the ID
+cars <- cars[,-1]
+
+nums <- sapply(cars, is.numeric)
+correlations <- cor(cars[,nums])
+corrplot(correlations, order = "hclust")
+```
+
+Looking at the MPG we can see that MPG has an negative correlation with horsepower, weight, cylinders and displacement which make total sense. 
+In the other hand MPG has an poisitive correlation with origin, acceleration and model. 
+The correlation between price and mpg is neutral. 
+
+### Correlation Some Individual Visualization
+
+To become more clear about positive correlation, a negative correlation and a neutral correlation we are going to get some example from our dataset. 
+
+### Positive Correlation
+
+We saw that MPG and Origin has a strong positive correlation. And you can confirm that at the next graphic:
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+ggplot(cars, aes(mpg, acceleration)) + 
+  geom_jitter() + 
+  theme_classic() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+You can see that the best line that fit our data is an crescent line. Which is what we are expecting. If MPG and Acceleration has the best positive correlation we are going to see something like that
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+ggplot(cars, aes(mpg, mpg)) + 
+  geom_jitter() + 
+  theme_classic() +
+  labs(title = "Best Positive Correlation", y = "", x = "") +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+### Negative Correlation
+
+We saw that MPG and Horsepower has a strong negative correlation as you can see next
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+ggplot(cars, aes(mpg, horsepower)) + 
+  geom_jitter() + 
+  theme_classic() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+You can see that the best line that fit our data is an decreasing line. Which is what we are expecting. If MPG and Horsepower has the best positive correlation we are going to see something like that
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+ggplot(cars, aes(mpg, -mpg)) + 
+  geom_jitter() + 
+  theme_classic() +
+  labs(title = "Best Negative Correlation", y = "", x = "") +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+### Neutral Correlation
+
+We saw that MPG and Price has an neutral correlation as you can see next
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+ggplot(cars, aes(mpg, price)) + 
+  geom_jitter() + 
+  theme_classic() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+You can see that the best line that fit our data is an straight line.
+
+## Conclusion
+
+I dont have any background with cars but the negative correlation between mpg and horsepower, weight, cylinders and displacement made sense. But for me I didnt understate why mpg and acceleration has positive correlation, I was expecting an negative correlation. 
+
+Another surprise for me during the Exploratory data analysis was that price and mpg has no correlation. 
+
+For the next step I'm excited to create and run some model to predict the price of the cars based at this dataset. How good can be my model with only this data? It the Rsquared that I could find good enough?
