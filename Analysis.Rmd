@@ -209,18 +209,12 @@ boxplot(cars$price, data=cars$price, main="Price BoxPLot",
 Looking at the box plot of price we can see that we have only one outlier
 
 ```{r, message=FALSE, warning=FALSE, fig.align='center'}
-ggplot(cars, aes(price)) + 
-  geom_histogram(binwidth = 5) +
-  labs(title = "Histogram of Weight", y = "Count") +
-  theme_classic()
-
-
 to_Plot <- as.data.frame(table(cars$price))
 colnames(to_Plot) <- c("Price", "Frequency")
 
 ggplot(head(to_Plot[ order(-to_Plot[,2]), ]), aes(x = reorder(Price, Frequency), y = Frequency)) + 
   geom_bar(stat = "identity") +
-  labs(title = "Model", x = "Price") +
+  labs(title = "Common Price", x = "Price") +
   theme_classic() + 
   coord_flip()
 ```
